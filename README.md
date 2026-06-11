@@ -88,6 +88,15 @@ Please add a `SUBMISSION.md` at the repo root with:
 2. **Tradeoffs you made** — anywhere you chose one option over another, what was the alternative?
 3. **What you'd do with another day** — anything you saw and consciously chose not to fix.
 4. **How to run your version** — if your `docker compose up` command isn't enough, document it.
+5. **Deployment plan** — describe how you would take this from `docker compose up` on your laptop to a safe, production-ready deployment. You do NOT need to actually deploy it. We're looking for your thinking. Things worth covering:
+   - Where you'd run it (platform, region(s), why)
+   - How secrets reach the container (and rotate)
+   - Rollout strategy and how you'd roll back a bad release
+   - How database migrations run in your pipeline, and what you'd do about a migration that can't be rolled back
+   - Logs, metrics, and where alerts would go
+   - Anything you'd want in place before a real user touched it
+
+   Pretend you're writing this for a teammate who's joining next week. We'll talk through it together in the walkthrough.
 
 We pay more attention to `SUBMISSION.md` than to almost anything else. A small change with great reasoning beats a big change with no narrative.
 
