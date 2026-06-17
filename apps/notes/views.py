@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .models import Note
 
@@ -12,6 +13,7 @@ from .models import Note
 logger = logging.getLogger(__name__)
 
 
+@require_http_methods(["GET", "POST"])
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -26,24 +28,28 @@ def login_view(request):
     return render(request, "notes/login.html")
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     return redirect("login")
 
 
 @login_required
+@require_GET
 def note_list(request):
     notes = Note.objects.filter(owner=request.user)
     return render(request, "notes/list.html", {"notes": notes})
 
 
 @login_required
+@require_GET
 def note_detail(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
     return render(request, "notes/_note_card.html", {"note": note})
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def note_create(request):
     if request.method == "POST":
         note = Note.objects.create(
@@ -57,6 +63,7 @@ def note_create(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def note_edit(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
     if request.method == "POST":
@@ -69,6 +76,7 @@ def note_edit(request, pk):
 
 
 @login_required
+@require_http_methods(["DELETE"])
 def note_delete(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
     note.delete()
@@ -77,6 +85,7 @@ def note_delete(request, pk):
 
 
 @login_required
+@require_POST
 def note_summarize(request, pk):
     """Generate a 'summary' for a note.
 
