@@ -3,7 +3,7 @@ import time
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -11,6 +11,11 @@ from .models import Note
 
 
 logger = logging.getLogger(__name__)
+
+
+@require_GET
+def healthz(request):
+    return JsonResponse({"status": "ok"})
 
 
 @require_http_methods(["GET", "POST"])
