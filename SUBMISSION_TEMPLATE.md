@@ -6,13 +6,7 @@
 
 ### App
 
-- Removed the committed .env file from source control and replaced it with environment-specific example files (.env.dev.example and .env.prod.example).
-- Moved Django configuration (secret key, debug mode, allowed hosts, database configuration) to environment variables.
-- Replaced the hardcoded SQLite configuration with DATABASE_URL-based configuration to support SQLite locally and PostgreSQL in containerized/production environments.
-- Removed file-based session storage and reverted to Django's default database-backed session handling. This avoids session persistence issues when running multiple containers or replacing containers during deployments.
-- Added basic production-oriented Django security settings (secure cookies, content-type protection, clickjacking protection).
-- Replaced print() statements with standard Python logging so application logs can be collected by container platforms and centralized logging systems.
-- Updated outdated application dependencies where appropriate.
+-
 
 ### Docker
 
@@ -24,7 +18,7 @@
 
 ## Tradeoffs
 
-- Prioritized configuration management, session handling, logging, and deployment-related concerns. 
+- 
 
 ## What I'd do with another day
 
