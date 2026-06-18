@@ -1,7 +1,5 @@
 # Submission
 
-> Rename this file to `SUBMISSION.md` and fill it in. Keep it as long as it needs to be — no longer.
-
 ## What I changed and why
 
 ### App
@@ -29,13 +27,16 @@ Focused on making the application reproducible and easy to run locally while kee
 
 ### CI
 
-- Run Python tests and fail if broken.
-- Run frontend typecheck/build.
-- Build the Docker image.
-- On main, push to GHCR with rollback-friendly tags.
+Improved the existing GitHub Actions workflow to provide meaningful validation.
+
+- Run Python tests and fail the workflow on test failures.
+- Run frontend type checking and asset builds.
+- Validate Docker image builds.
+- Added a path toward publishing images to GHCR using immutable tags for rollback support.
 
 ## Tradeoffs
 
+- Focused on foundational operational improvements before pursuing more advanced optimizations or deployment automation, consistent with the assessment's emphasis on prioritization.
 - Prioritized configuration management, session handling, logging, and deployment-related concerns with respect to making the app production ready.
 - Kept the Docker solution intentionally simple and focused on local reproducibility rather than production-scale container orchestration.
 - Included migrations and seeding in container startup to reduce reviewer setup effort, though I would separate those concerns in a production deployment.
@@ -85,7 +86,7 @@ Password: demo
 
 ### Platform
 
-I would deploy this application to AWS ECS in a single region initially. ECS provides managed container orchestration with minimal operational overhead for an application of this size.
+I would deploy this application to AWS ECS Fargate in a single region initially. ECS provides managed container orchestration with minimal operational overhead for an application of this size.
 
 ### Database
 
@@ -128,6 +129,7 @@ Alerts would be routed to the team's notification platform (Slack, PagerDuty, et
 
 Before serving real users I would want:
 
+* Document operational runbooks and incident response procedures.
 * Automated backups and restore testing
 * HTTPS termination
 * Security scanning in CI
