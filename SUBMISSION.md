@@ -16,7 +16,16 @@
 
 ### Docker
 
--
+Focused on making the application reproducible and easy to run locally while keeping the solution simple.
+
+- Added a Dockerfile to containerize the Django application.
+- Switched application startup from Django's development server to Gunicorn.
+- Added a .dockerignore to reduce build context size and avoid including local artifacts and secrets in container builds.
+- Added a Docker Compose configuration to orchestrate the application and PostgreSQL together.
+- Replaced the local SQLite workflow with PostgreSQL in the containerized environment.
+- Added a PostgreSQL health check and configured the application container to wait for database readiness before startup.
+- Added WhiteNoise to serve static assets
+- Configured application startup to automatically run migrations and seed demo data for local onboarding convenience.
 
 ### CI
 
@@ -28,11 +37,17 @@
 ## Tradeoffs
 
 - Prioritized configuration management, session handling, logging, and deployment-related concerns with respect to making the app production ready.
-- 
+- Kept the Docker solution intentionally simple and focused on local reproducibility rather than production-scale container orchestration.
+- Included migrations and seeding in container startup to reduce reviewer setup effort, though I would separate those concerns in a production deployment.
+- Did not implement a multi-stage Docker build due to the assessment time constraints, though that would be a logical next optimization.
 
 ## What I'd do with another day
 
--
+- Convert the image to a multi-stage build to reduce image size and remove build tooling from the runtime image.
+- Run containers as a non-root user.
+- Add application health endpoints and container health checks.
+- Separate database migrations from application startup.
+- Introduce a dedicated static asset strategy for a production deployment.
 
 ## How to run
 
