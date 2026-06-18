@@ -52,7 +52,35 @@ Focused on making the application reproducible and easy to run locally while kee
 ## How to run
 
 ```bash
-# the command(s) a reviewer should run
+git clone <repo-url>
+cd notesy-app
+
+cp .env.dev.example .env
+
+docker compose up --build
+```
+
+The application will:
+
+* Start PostgreSQL
+* Wait for database readiness
+* Run database migrations
+* Seed demo data
+* Start the Django application via Gunicorn
+
+Once startup completes, visit:
+
+```text
+http://localhost:8000
+```
+
+Login credentials:
+
+```text
+Username: demo
+Password: demo
+```
+
 ```
 
 ## Deployment plan
