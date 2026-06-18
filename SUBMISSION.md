@@ -81,10 +81,59 @@ Username: demo
 Password: demo
 ```
 
-```
-
 ## Deployment plan
 
-> How would you take this from `docker compose up` on your laptop to a safe, production-ready deployment? You do not need to actually deploy it — we want your reasoning. Cover at least: where it runs, how secrets reach it, rollout + rollback, migrations, logs/metrics/alerts, and anything you'd want in place before a real user touched it.
+### Platform
 
--
+I would deploy this application to AWS ECS in a single region initially. ECS provides managed container orchestration with minimal operational overhead for an application of this size.
+
+### Database
+
+I would replace the Docker Compose PostgreSQL instance with Amazon RDS PostgreSQL. Automated backups, Multi-AZ support, and maintenance windows would be enabled.
+
+### Secrets Management
+
+Application secrets would be stored in AWS Secrets Manager and injected into the container at runtime through ECS task definitions.
+
+Secret rotation would be handled through Secrets Manager where supported.
+
+### Rollout Strategy
+
+Container images would be built by GitHub Actions and published to GitHub Container Registry using immutable commit SHA tags.
+
+Deployments would use rolling updates with health checks.
+
+Rollback would be performed by redeploying the previous image tag.
+
+### Database Migrations
+
+Migrations would run as a dedicated deployment step prior to application rollout.
+
+For migrations that cannot be rolled back safely, I would favor additive migration patterns and staged deployments to reduce risk.
+
+### Logging, Metrics, and Alerting
+
+Application logs would be written to stdout/stderr and forwarded to CloudWatch Logs.
+
+Infrastructure and application metrics would be collected through CloudWatch.
+
+Alerts would be routed to the team's notification platform (Slack, PagerDuty, etc.) for:
+
+* Application health check failures
+* Elevated error rates
+* Container restart loops
+* Database availability issues
+
+### Additional Production Readiness Items
+
+Before serving real users I would want:
+
+* Automated backups and restore testing
+* HTTPS termination
+* Security scanning in CI
+* Dependency vulnerability monitoring
+* Infrastructure as Code for all deployed resources
+* Basic application and infrastructure monitoring dashboards
+
+```
+```
