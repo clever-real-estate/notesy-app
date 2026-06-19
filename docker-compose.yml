@@ -9,7 +9,8 @@ services:
       ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
       DATABASE_URL: "postgres://notesy:notesy@db:5432/notesy"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: >
       sh -c "python manage.py migrate &&
              python manage.py seed &&
@@ -21,6 +22,11 @@ services:
       POSTGRES_DB: notesy
       POSTGRES_USER: notesy
       POSTGRES_PASSWORD: notesy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notesy -d notesy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
