@@ -1,0 +1,28 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: "dev-only-docker-secret"
+      DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
+      DATABASE_URL: "postgres://notesy:notesy@db:5432/notesy"
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed &&
+             gunicorn notesy.wsgi:application --bind 0.0.0.0:8000"
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: notesy
+      POSTGRES_USER: notesy
+      POSTGRES_PASSWORD: notesy
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

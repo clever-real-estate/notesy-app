@@ -5,3 +5,4 @@ requests>==2.32.0
 python-dotenv
 pytest
 pytest-django
+dj-database-url
