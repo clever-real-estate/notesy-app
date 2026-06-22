@@ -2,14 +2,31 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
 
-SECRET_KEY = "django-insecure-replace-me-eventually-l0lz-h4xx-9000"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-dev-only-not-for-production"
+    else:
+        from django.core.exceptions import ImproperlyConfigured
 
-DEBUG = True
+        raise ImproperlyConfigured("Set the DJANGO_SECRET_KEY environment variable.")
 
-ALLOWED_HOSTS = ["*"]
+_allowed = os.getenv("DJANGO_ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()]
+if not ALLOWED_HOSTS:
+    if DEBUG:
+        ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+
+        raise ImproperlyConfigured("Set DJANGO_ALLOWED_HOSTS (comma-separated).")
 
 
 INSTALLED_APPS = [
