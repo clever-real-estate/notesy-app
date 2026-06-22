@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+.git/
+.github/
+.env
+.sessions/
+db.sqlite3
+staticfiles/
+*.md
+!README.md

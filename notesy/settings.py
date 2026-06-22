@@ -1,11 +1,15 @@
 """Django settings for notesy."""
 import os
+import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+RUNNING_TESTS = "pytest" in sys.modules
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
 
@@ -41,6 +45,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -70,17 +75,32 @@ TEMPLATES = [
 WSGI_APPLICATION = "notesy.wsgi.application"
 
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+def _database_from_url(url: str) -> dict:
+    parsed = urlparse(url)
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed.path.lstrip("/"),
+        "USER": parsed.username or "",
+        "PASSWORD": parsed.password or "",
+        "HOST": parsed.hostname or "",
+        "PORT": parsed.port or 5432,
     }
-}
 
 
-SESSION_ENGINE = "django.contrib.sessions.backends.file"
-SESSION_FILE_PATH = str(BASE_DIR / ".sessions")
-os.makedirs(SESSION_FILE_PATH, exist_ok=True)
+_database_url = os.getenv("DATABASE_URL", "").strip()
+if RUNNING_TESTS or not _database_url:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.file"
+    SESSION_FILE_PATH = str(BASE_DIR / ".sessions")
+    os.makedirs(SESSION_FILE_PATH, exist_ok=True)
+else:
+    DATABASES = {"default": _database_from_url(_database_url)}
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -97,6 +117,13 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+WHITENOISE_USE_FINDERS = DEBUG
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

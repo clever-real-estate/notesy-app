@@ -3,5 +3,6 @@ gunicorn
 psycopg2-binary
 requests==2.32.3
 python-dotenv
+whitenoise
 pytest
 pytest-django

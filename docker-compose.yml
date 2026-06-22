@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: notesy
+      POSTGRES_PASSWORD: notesy_dev_pw
+      POSTGRES_DB: notesy
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notesy -d notesy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-docker-dev-only}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,web}
+      DATABASE_URL: postgres://notesy:notesy_dev_pw@db:5432/notesy
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
