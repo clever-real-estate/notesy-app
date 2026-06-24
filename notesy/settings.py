@@ -4,12 +4,24 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Make this dynamic so a user running on a local machine can override, default to prod for safety
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 
-SECRET_KEY = "django-insecure-replace-me-eventually-l0lz-h4xx-9000"
 
-DEBUG = True
+def get_secret_key():
+    key = os.getenv("DJANGO_SECRET_KEY")
+    if key:
+        return key
+    
+    # Require environment variable key in all environments
+    raise RuntimeError("DJANGO_SECRET_KEY must be set")
 
-ALLOWED_HOSTS = ["*"]
+SECRET_KEY = get_secret_key()
+
+
+# Since we don't know the actual URL just use localhost for now
+# If this was deployed for real we'd know the desired URL
+ALLOWED_HOSTS = ["127.0.0.1","::1","localhost"]
 
 
 INSTALLED_APPS = [

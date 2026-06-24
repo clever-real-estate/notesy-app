@@ -5,3 +5,12 @@ db.sqlite3
 node_modules/
 .venv/
 venv/
+
+# Static files are generated, don't commit them
+static/**
+staticfiles/**
+
+# VS Code and GitHub CodeSpaces files
+.devcontainer/**
+.vscode
+.sessions

@@ -5,8 +5,11 @@
 ## What I changed and why
 
 ### App
+- Converted SECRET_KEY to environment variable to it can be passed once containerized and isn't in GIT.
+- Converted DEBUG to environment variable with default False so it can be toggled on for local development of the app.
+- Commented out /Admin URL path for now as I didn't see any usage and it is not recommended to be avaialble publiclly
+- Setup allowed hosts list for localhost instead of * to lock down hostname allows.  Required when DEBUG isn't True.
 
--
 
 ### Docker
 
