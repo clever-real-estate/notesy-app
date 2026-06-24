@@ -5,3 +5,10 @@ db.sqlite3
 node_modules/
 .venv/
 venv/
+
+# Secrets / local env — never commit
+.env
+.env.*
+!.env.example
+.sessions/
+staticfiles/

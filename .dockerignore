@@ -1,0 +1,29 @@
+# Keep the build context small and avoid leaking local/dev artifacts.
+.git
+.gitignore
+.github
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Local DB / sessions / secrets
+db.sqlite3
+.sessions/
+.env
+.env.*
+!.env.example
+
+# Node — installed fresh in the build stage
+node_modules/
+
+# Build outputs — regenerated inside the image
+static/js/
+staticfiles/
+
+# Docs / misc
+*.md
+!README.md

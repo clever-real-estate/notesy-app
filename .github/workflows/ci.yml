@@ -1,14 +1,140 @@
 name: CI
 
-on: [push]
+# Run the full gate on every PR and on pushes to main. The image is only
+# built & published on pushes to main (i.e. after a merge).
+on:
+  push:
+    branches: [main, alex-assessment]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege by default; the publish job opts into more below.
+permissions:
+  contents: read
 
 jobs:
   test:
+    name: Tests (Python)
     runs-on: ubuntu-latest
+    # Test against Postgres — the same engine we run in prod — not SQLite.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: notesy
+          POSTGRES_PASSWORD: notesy
+          POSTGRES_DB: notesy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notesy -d notesy_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://notesy:notesy@localhost:5432/notesy_test
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      # No TLS in CI; keep the HTTPS-only redirects/cookies off for the test run.
+      DJANGO_SECURE_SSL_REDIRECT: "False"
+      DJANGO_SESSION_COOKIE_SECURE: "False"
+      DJANGO_CSRF_COOKIE_SECURE: "False"
+      DJANGO_SECURE_HSTS_SECONDS: "0"
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: pytest || true
+          cache: pip
+
+      - name: Generate ephemeral secret key
+        # No real secret is needed to run tests — mint a strong throwaway key
+        # per run instead of committing a literal into the workflow.
+        run: echo "DJANGO_SECRET_KEY=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run migrations (smoke-check schema applies)
+        run: python manage.py migrate --noinput
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Django deployment checks
+        # Inspects settings only (no HTTP), so we flip the HTTPS-only flags ON
+        # here to assert the production posture is clean. Fails on any warning.
+        env:
+          DJANGO_SECURE_SSL_REDIRECT: "True"
+          DJANGO_SESSION_COOKIE_SECURE: "True"
+          DJANGO_CSRF_COOKIE_SECURE: "True"
+          DJANGO_SECURE_HSTS_SECONDS: "31536000"
+        run: python manage.py check --deploy --fail-level WARNING
+
+  frontend:
+    name: Front-end (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Build bundle (verify esbuild succeeds)
+        run: npm run build
+
+  publish:
+    name: Build & push image (GHCR)
+    runs-on: ubuntu-latest
+    needs: [test, frontend]
+    # Only publish after a merge to main — never on PRs from forks.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image tags & labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
