@@ -103,7 +103,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+# `static/` holds the esbuild output (static/js/*). It only exists once the
+# front-end has been built (Docker build stage, or `npm run build` locally), so
+# include it only when present — otherwise `check --deploy` warns (W004) in the
+# CI test job and bare dev checkouts where the bundle hasn't been built.
+STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").is_dir() else []
 
 # WhiteNoise serves compressed static files straight from the app process so we
 # don't need a separate web server in front for assets. We use the non-manifest
