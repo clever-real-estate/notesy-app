@@ -5,3 +5,7 @@ db.sqlite3
 node_modules/
 .venv/
 venv/
+staticfiles/
+*.log
+docker-compose.override.yml
+ Windows files
