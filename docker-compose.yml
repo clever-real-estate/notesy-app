@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+
+  db:
+    
+    image: postgres:16-alpine
+
+    environment:
+      
+      POSTGRES_DB: notesy
+      POSTGRES_USER: notesy
+      
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+     
+      - postgres_data:/var/lib/postgresql/data
+
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notesy"]
+      interval: 5s    
+      timeout: 5s       
+      retries: 5      
+
+  web:
+    
+    build: .
+
+    ports:
+    
+      - "8000:8000"
+
+    env_file: .env
+
+    environment:
+    
+      DATABASE_URL: postgres://notesy:${POSTGRES_PASSWORD}@db:5432/notesy
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+
+  
+    depends_on:
+      db:
+        condition: service_healthy
+
+ 
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed &&
+             gunicorn notesy.wsgi:application
+             --bind 0.0.0.0:8000
+             --workers 2
+             --timeout 120
+             --access-logfile -
+             --error-logfile -"
+
+volumes:
+  postgres_data:
