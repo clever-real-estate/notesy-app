@@ -119,12 +119,56 @@ python manage.py runserver
 
 ## Deployment plan
 
-**Secrets.** A `.env` file is a local-dev convenience, not a production secrets mechanism. In production, secrets are injected at runtime as environment variables from a managed secret store (e.g. AWS Secrets Manager / SSM,or Kubernetes Secrets) — never written to a file in the image or repo. Because settings.py reads everything from the environment, the *source* of those variables is a deployment concern, not a code concern: the same settings.py runs locally (from `.env`) and in prod (from the secret store) with no change. Rotation is handled by the secret store.
+## 5. Deployment plan
 
-**Database transport security.** I did not hard-code `sslmode` into settings.py. Encryption of app-to-Postgres traffic is enforced at the platform layer: the database runs on a private network unreachable from the public internet, and a managed Postgres endpoint would require TLS server-side. This keeps app config free of environment-specific assumptions. If app-side enforcement were wanted as defense-in-depth, `dj-database-url` supports `ssl_require=True` (ideally with `verify-full` for certificate verification, not bare `require`).
+This describes how I'd take Notesy from `docker compose up` on a laptop to a safe, production-ready deployment on AWS. Written for a teammate joining next week.
 
-**Host validation (defense in depth).** `ALLOWED_HOSTS` is enforced in the app per environment. At the platform layer I would additionally configure the ingress / load balancer to only route requests matching the expected host(s), dropping malformed-host traffic before it reaches the app. The app-level check remains as the inner layer — it travels with the app and covers internal or
-direct traffic that bypasses the ingress.
-<!-- > How would you take this from `docker compose up` on your laptop to a safe, production-ready deployment? You do not need to actually deploy it — we want your reasoning. Cover at least: where it runs, how secrets reach it, rollout + rollback, migrations, logs/metrics/alerts, and anything you'd want in place before a real user touched it. -->
+**Platform and region.**
+Start on **ECS with Fargate** — managed container runtime, no EC2 instances to patch, scales to zero when idle, and the operational overhead matches where a small service should be. The three containers from compose map cleanly: an ECS service for the app (gunicorn), a task for nginx (or an ALB in front, making a separate nginx container unnecessary), and Amazon RDS for Postgres (managed, automated backups, multi-AZ for HA). If the service grows in traffic or complexity — more services, more teams, need for fine-grained resource control — migrate to **EKS**. That's not a rewrite; the same Docker images run on Kubernetes with a Helm chart wrapping the compose topology.
+
+Single region to start (`us-east-1` — lowest latency for most US users, widest AWS service availability). Add a second region behind Route 53 latency routing if the user base grows globally or if SLA requirements demand geographic redundancy.
+
+**Secrets.**
+No secrets in the image, no secrets in source — established in Tier 1. In production, secrets are stored in **AWS Secrets Manager** and injected as environment variables at task startup by ECS. The app reads them from `os.environ`, so the same code runs locally (from `.env`) and in prod (from Secrets Manager) with no change. Rotation is handled by Secrets Manager: it rotates on a schedule, pushes the new value, and ECS picks it up on the next task restart. No manual secret management, no credential drift. IAM roles (not access keys) grant the ECS task permission to read its own secrets — no long-lived credentials anywhere.
+
+**Rollout strategy.**
+**Rolling update** — ECS replaces tasks one at a time, with the old version serving traffic until the new one passes its health check. At least one healthy task is always running, so there's no downtime window. The ALB health check (hitting `/login/`) gates traffic away from tasks that haven't fully started yet.
+
+**Rollback** is redeploying the previous commit's image. Every image is tagged by `github.sha`, so the sequence is: identify the last good commit in git log, trigger a deploy of that SHA's image. No rebuild
+needed — the image is already in GHCR. With ECS this is a task definition update pointing at the previous SHA; it's a two-minute operation.
+
+**Database migrations.**
+Migrations run as a one-off ECS task before the new app version receives traffic — the same `python manage.py migrate --noinput` from the entrypoint, but as a standalone task rather than inline with the web
+process. This separates "migrate the schema" from "start serving traffic" so a failed migration stops the deploy before users see it.
+
+The hard case is a migration that can't be rolled back — a destructive change like dropping a column or renaming a table. The strategy:
+
+1. **Expand/contract pattern.** Never drop in the same deploy you stop using something. First deploy: add the new column, keep the old one, app writes to both. Second deploy: migrate data, switch reads to new column. Third deploy: drop the old column once confident. Each step is independently rollback-safe.
+2. **Backup before any destructive migration.** RDS automated backups + a manual snapshot immediately before the migration runs. If something goes wrong, restore point is minutes away.
+3. **If a migration has already run and rollback is impossible:** roll forward with a fix rather than back. The app code is the rollback lever, not the schema.
+
+**Logs, metrics, alerts.**
+The app already logs structured output to stdout. In ECS, stdout is automatically shipped to **CloudWatch Logs** — no agent, no config. Log groups per service, retention set to 30 days.
+
+Metrics via **CloudWatch Container Insights** (CPU, memory, request count per task) and application-level metrics from gunicorn (request duration,error rate). Key alerts:
+
+- **5xx error rate > 1%** — page on-call immediately.
+- **p99 response time > 2s** — warning; investigate before it becomes an outage. (Also the signal that the `note_summarize` blocking call is causing worker starvation under load)
+- **Task restarts** — a restarting task is almost always a crash loop; alert before it takes down the service.
+- **RDS CPU / connection count** — headroom indicator; act before it becomes a bottleneck.
+
+Alerts route to **SNS → PagerDuty/Slack** depending on severity. Critical (5xx spike, task crash) → PagerDuty. Warning (latency, DB headroom) → Slack.
+
+**Before a real user touches it.**
+In rough priority order:
+
+- **HTTPS end to end.** ALB terminates TLS with an ACM certificate; HTTP redirects to HTTPS. `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` enabled (currently deferred — safe to add now that the platform layer is defined).
+- **Secrets in Secrets Manager**, not a `.env` file on a server.
+- **RDS in a private subnet** — not reachable from the public internet, only from the app's security group.
+- **At least two tasks running** so a single task failure doesn't cause downtime.
+- **Backup verified** — automated RDS snapshots enabled and a restore tested, not just assumed to work.
+- **Alerts wired** — at minimum the 5xx and task-restart alerts above, so the first sign of trouble reaches a human.
+- **The `note_summarize` blocking call** handled — either a timeout on the real API call so a hung upstream can't pin a worker indefinitely, or summarize traffic isolated to a separate task definition so it
+  can't starve the main service. The background queue (Celery/RQ) is the full fix but takes time; the timeout is the immediate must-have.
 
 -
