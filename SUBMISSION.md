@@ -59,8 +59,10 @@ Setup container reg and push first version
 
 ### CI
 
+- My CI doesn't actually work.  I'd want some extra time to make it work but I'm at 4h now so stopping.
 - The existing file is not fully tested in all situations, in fact this version isn't tested because I need to commit to test.
 - I feel this process could use additional checks added.  There's no kind of security check that might look for things like packages with known vulnerabilities or static code scanning.  Those are well beyond the scope of this initial exercise.
+- I feel like the overall workflow could be split out better in GitHub Actions but my experience with it has been light.  I would probably look into splitting the build and test out a bit better.  Right now though it does have the advantage that it will not push the container unless the tests pass.  It is not as reusable though given it does everything as 1 task.
 
 ## How to run
 
