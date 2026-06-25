@@ -28,11 +28,12 @@
 
 ### CI
 
--
+- Adjusted ci.yml file to try to build the docker image, test it using a empty database, then publish it to GHCR.
 
 ## Tradeoffs
 
--
+- For now I decided that the app itself would be HTTP and terminate HTTPS at an external load balancer.
+- The requirement for postgres means you can't manually run commands at the command prompt unless you specificlly start up the container for postgres on your machine.
 
 ## What I'd do with another day
 
@@ -54,13 +55,12 @@
 - Right now the docker file copies a lot of the local files into the container.  I was trying to use a .dockerignore to keep the container size small.  I need more time to evaluate a better way to handle this, perhaps only copying specific files instead of copying the whole directly and relying on .dockerignore.  Either way this would require more time.
 - Investigate if there's a better way to build the docker container, or update it, that doesn't take so long.  I suspect there is using a more modular dockerfile.  I have heard of using multi-stage docker files but have not myself used one before.  I decided doing that research would take too long.
 Setup container reg and push first version
+- Right now there is not a run for the tests when building the container.  This means errors in the tests are not discovered until the CI is run.  The docker file should run the tests then cleanup after itself.  That validates the docker container passes all tests but ideally is still small.
 
 ### CI
 
-- Setup GitHub actions
--- Run tests
--- Build container
--- Push built container to reg
+- The existing file is not fully tested in all situations, in fact this version isn't tested because I need to commit to test.
+- I feel this process could use additional checks added.  There's no kind of security check that might look for things like packages with known vulnerabilities or static code scanning.  Those are well beyond the scope of this initial exercise.
 
 ## How to run
 
@@ -81,4 +81,5 @@ docker compose up
 
 -
 ## Bugs found
+
 - Deleting a note does not reflect on page until refresh.
