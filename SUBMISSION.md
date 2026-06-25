@@ -1,10 +1,10 @@
 # Submission
 
-This was an interesting project for me because I have never used Django to run a Python webapp.  I found it interesting that this test uses Django when it was not listed in the requirements of the job description.  In my case I do have Python experience with small AWS Lambdas and automation which gave me a good base to start from.  I also have 8+ years of software development experience with other languages giving me the knowledge I needed to understand how the app actually worked.
+This was a hard project for me because I have never used Django to run a Python webapp.  I thought it was an interesting choice given that Django was only listed in the nice to have section of the job description.  In my case I do have Python experience with small AWS Lambdas and automation helped.  I also have 8+ years of web-based software development experience with other languages helping me understand how the app worked.
 
-I started out by watching a video on YouTube and asking ChatGPT to explain Django's layout compared to .NET where I have the most programing experience.  To be transparent that took be around 40 minutes which I did not include in the project time.
+I started out by watching a video on YouTube and asking ChatGPT to explain Django's layout compared to .NET where I have the most programing experience.  To be transparent that took me around 40 minutes which I did not include in the project time.
 
-Once I got started on the project I believe I spent around 4 hours actually working on the content of the project itself.  That does not include the time I'm taking now to write out the submission summary and deployment plan.  While I'm not satisfied with my final result being "production ready" I stopped because I was at 4 hours.
+Once I got started on the project I believe I spent around 4 hours actually working on the content of the project itself.  That does not include the time I'm taking now to write out the submission summary and deployment plan.  While I'm not satisfied with my final result being "production ready" I stopped because I was at 4 hours.  I suspect the reason this took me so long is that I have not had any of exposure to AI driven development yet given my previous company had not yet given us access to use AI for it.  I am interested in getting more AI exposure though at a company that does allow the usage of AI development tools.
 
 ## What I changed and why
 
