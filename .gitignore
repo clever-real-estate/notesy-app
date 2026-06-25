@@ -9,3 +9,6 @@ staticfiles/
 *.log
 docker-compose.override.yml
  Windows files
+ esbuild
+notesy-frontend@0.1.0 
+static/
