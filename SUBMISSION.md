@@ -38,6 +38,7 @@ One command to run stack using `docker compose up --build`, and serves on http:/
 
 ## What I'd do with another day
 
+- Remove DB migration from docker-entrypoint.sh, add as a dedicated CICD step
 - Add security/vulnerability scanning in CICD
 - Add container status checking mechanism to CI (If using applicable service)
 - Build dev/qa/stg/prod branch and set up github organization merge policy (prevent drift between envs, branch protection)
