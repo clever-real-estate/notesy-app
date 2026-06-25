@@ -1,6 +1,10 @@
 # Submission
 
-> Rename this file to `SUBMISSION.md` and fill it in. Keep it as long as it needs to be — no longer.
+This was an interesting project for me because I have never used Django to run a Python webapp.  I found it interesting that this test uses Django when it was not listed in the requirements of the job description.  In my case I do have Python experience with small AWS Lambdas and automation which gave me a good base to start from.  I also have 8+ years of software development experience with other languages giving me the knowledge I needed to understand how the app actually worked.
+
+I started out by watching a video on YouTube and asking ChatGPT to explain Django's layout compared to .NET where I have the most programing experience.  To be transparent that took be around 40 minutes which I did not include in the project time.
+
+Once I got started on the project I believe I spent around 4 hours actually working on the content of the project itself.  That does not include the time I'm taking now to write out the submission summary and deployment plan.  While I'm not satisfied with my final result being "production ready" I stopped because I was at 4 hours.
 
 ## What I changed and why
 
@@ -19,7 +23,7 @@
 - Added session cookie age to settings.  Default of 2 weeks may be high for some apps.  This would require on app security requirements but should be explicitly set as best practice in my mind.
 - Increase password validation requirements to set length to 12 and add common and numeric password checks.  Strong passwords are important to securing an app.
 - Add WhiteNoiseMiddleware to support delivery of static files.  From what I saw the better way to do this in prod is to use a CDN or NGINX but for the sake of this small project WhiteNoise seems good enough for now.  This would be something to revisit depending on the expected traffic and complexity of the app.
-- Changed app to use postgres database engine to allow for a remote database that is not a file on your system to be used when deployed.
+- Changed app to use PostgreSQL database engine to allow for a remote database that is not a file on your system to be used when deployed.
 
 ### Docker
 
@@ -33,7 +37,7 @@
 ## Tradeoffs
 
 - For now I decided that the app itself would be HTTP and terminate HTTPS at an external load balancer.
-- The requirement for postgres means you can't manually run commands at the command prompt unless you specificlly start up the container for postgres on your machine.
+- The requirement for PostgreSQL means you can't manually run commands at the command prompt unless you specifically start up the container for PostgreSQL on your machine.
 
 ## What I'd do with another day
 
@@ -76,12 +80,26 @@ Once you've seeded the database though you would not want your app to continue t
 docker compose up
 ```
 
-
 ## Deployment plan
 
-> How would you take this from `docker compose up` on your laptop to a safe, production-ready deployment? You do not need to actually deploy it — we want your reasoning. Cover at least: where it runs, how secrets reach it, rollout + rollback, migrations, logs/metrics/alerts, and anything you'd want in place before a real user touched it.
+For a production application I would run this on AWS with the following services.
+- Elastic Container Registry would be used for the application containers.  The CI would be updated to push to this registry.
+- ECS Fargate would be used to run the application container itself.  ECS supports automatic scaling the number of containers up and down based on load.
+- Aurora PostgreSQL would probably be the easiest place to host the database.  RDS PostgreSQL is also an option and would be closer to the container in dev.  If desired you can also run the database on ECS using a PostgreSQL container with an EFS backend but that would be a lot more management overhead.
+- ElastiCache Redis could be utilized for the session storage to move it off a file.  This was noted above as something needed to be done before you can run more than 1 container load balanced.
+- For secrets I would setup the ECS task definition to read passwords out of Secret Manager secrets.  You an even build a automation within AWS that rotation of the database password and Django secret key and replaces the app containers with the new settings.
+- Various logs, including those from the web container and database, should report their logs to CloudWatch Logs.
+- The application will need to terminate HTTPS on a load balancer.  Ideally we would use an Application Load Balancer but a Network Load Balancer is also possible.  Either way the load balancer should terminate traffic with an AWS managed certificate from ACM and then pass traffic along to the ECS container service.
+- The AWS account should be using Security Hub, Config, CloudWatch, CloudTrail, and if required Inspector.  I'm sure there are other services but this is those I can think of right now off the top of my head that are for security, logging, and alerting in an AWS account that may have some place in this environment.
 
--
+Other considerations that need to be taken care of before this application is production ready.
+- I mentioned a number of items in the "if I had more time" section related to hardening up the app more, investigating the logging further, and what to enable once HTTPS is setup.  Those would probably be good to set via environment variables so local development environments don't need HTTPS.
+- If this is expected to be a larger deployment then the static files should probably be placed into S3 with a CloudFront caching layer instead of serving them from within the container itself.  The ALB should be able to route traffic by route so that the static folder can be in a different service.  I haven't tried this before but I suspect it is possible.
+- Deployments could be triggered via GitHub Actions or something else.  The deployment process would need involve updating the ECS task definition for the new container image and the replacing the deployment in ECS.  There needs to be something in the ECS task definition itself that runs the database migration step.  This would likely be via an init container, though AWS doesn't use that term, that is part of the task definition.
+- Rollback would simply be reverting the ECS task definition deployed to the prior version.
+- Some thought needs to be put into how we want to alert on the application and its metrics.  Metrics such as the number of containers, the container or database CPU/memory usage, or even request volumes might all be useful metrics.  You can use CloudWatch for most of this alerting.  APM would be nice but I don't think it is required right away given how small this app is.
+- If compliance requirements for this app are high enough you could look at deploying the containers and database into a VPC.  That would give a higher level of security for the network traffic between them.  Right now my sample I do not believe uses TLS for the database connection so that either needs to get added or we need VPC isolation of the traffic.
+
 ## Bugs found
 
 - Deleting a note does not reflect on page until refresh.
