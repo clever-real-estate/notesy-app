@@ -17,6 +17,7 @@
 - Added comment to come back and change session handling later.
 - Added session cookie age to settings.  Default of 2 weeks may be high for some apps.  This would require on app security requirements but should be explicitly set as best practice in my mind.
 - Increase password validation requirements to set length to 12 and add common and numeric password checks.  Strong passwords are important to securing an app.
+- Add WhiteNoiseMiddleware to support delivery of static files.  From what I saw the better way to do this in prod is to use a CDN or NGINX but for the sake of this small project WhiteNoise seems good enough for now.  This would be something to revisit depending on the expected traffic and complexity of the app.
 
 #### TODO
 - Implement session handling, in prod we can't have sessions in local files
@@ -63,3 +64,5 @@
 > How would you take this from `docker compose up` on your laptop to a safe, production-ready deployment? You do not need to actually deploy it — we want your reasoning. Cover at least: where it runs, how secrets reach it, rollout + rollback, migrations, logs/metrics/alerts, and anything you'd want in place before a real user touched it.
 
 -
+## Bugs found
+- Deleting a note does not reflect on page until refresh.

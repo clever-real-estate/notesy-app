@@ -5,3 +5,4 @@ requests==2.20.0
 python-dotenv
 pytest
 pytest-django
+whitenoise
