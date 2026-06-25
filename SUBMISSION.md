@@ -5,6 +5,7 @@
 ## What I changed and why
 
 ### App
+
 - Converted SECRET_KEY to environment variable to it can be passed once containerized and isn't in GIT.
 - Converted DEBUG to environment variable with default False so it can be toggled on for local development of the app.
 - Commented out /Admin URL path for now as I didn't see any usage and it is not recommended to be available publicly
@@ -18,46 +19,61 @@
 - Added session cookie age to settings.  Default of 2 weeks may be high for some apps.  This would require on app security requirements but should be explicitly set as best practice in my mind.
 - Increase password validation requirements to set length to 12 and add common and numeric password checks.  Strong passwords are important to securing an app.
 - Add WhiteNoiseMiddleware to support delivery of static files.  From what I saw the better way to do this in prod is to use a CDN or NGINX but for the sake of this small project WhiteNoise seems good enough for now.  This would be something to revisit depending on the expected traffic and complexity of the app.
-
-#### TODO
-- Implement session handling, in prod we can't have sessions in local files
-- Implement CSP
-- http -> https redirect, might be better at load balancer level
-- Looks like Django needs to deal with static objects, might be something for docker and later though
-- Verify no vulnerable packages, I saw a warning in my build of the ts stuff
-- Understand asgi vs wsgi and which to use.  wsgi works but asgi seems to be the intent.
+- Changed app to use postgres database engine to allow for a remote database that is not a file on your system to be used when deployed.
 
 ### Docker
--
 
-#### TODO
-- Build Docker file
-- Change to use postgres and add container for it
-- Setup docker compose file
-- Setup container reg and push first version
+- Build Docker file to allow building the app container.
+- Setup docker compose file to allow running the local dev environment quickly.
 
 ### CI
--
 
-#### TODO
-- Setup GitHub actions
--- Run tests
--- Build container
--- Push built container to reg
+-
 
 ## Tradeoffs
 
 -
 
 ## What I'd do with another day
-- I choose not to investigate how to research django sessions or if the app is using them due to my lack of knowledge of django.  If this app uses a session then the default appears to store in memory which will not work in production when load balanced.  Therefore you would need to implement a remote state backend such as Redis.
-- I choose not to add HTTPS to the application because my assumption is that the load balancer in front of this app in production will terminate HTTPS/TLS.  This means I also did not include security headers such as HSTS and did not set the secure flag on the cookies.
+
+### App
+
+- Implement session handling using Redis.  Production sessions should not be stored on local files within the docker container as that does not allow traffic to be load balanced between containers.
+- Implement CSP to improve security of the site.
+- Setup HTTPS for the site.  This would likely involve using a reverse proxy like NGINX.  After this was setup I could then enable http to https redirection and would be able to also start using various security related settings I left stubbed.
+- An evaluation could be done if the static objects should be migrated off WhiteNoise and hosted with NGINX or whatever is used to terminate HTTPS.  This would allow for better scaling of the site.
+- I noticed when running the npm command there was a warning.  An evaluation should be made to ensure there are no vulnerable packages.
+- I myself do not at this time understand asgi vs wsgi and which to use.  I used wsgi because ChatGPT suggested it and it seems to work.  I see a file though named asgi so I suspect that is the intended server to be using.  From my breif read asgi might be better for higher load situations and is considered more modern.
+- The packages in the requirements.txt installed by PIP should have version numbers added to each of them.  This prevents unexpected package updates that could introduce unexpected bugs.  It can also help protect against supply chain attacks if a new version posted to PIP ends up being compromised by delaying the update until it can be reviewed.
+- I did not get time to do a good review of what is being logged.  I see some level of logging spit out for the app as it runs that but that logging seemed pretty weak.  I determined this was lower priority than getting the app running in a container itself.  This would need to be done though before anything went to production.
+- If adding IP logging for requests make sure to take into account x-forwarded-for header which should be passed by NGINX or whatever terminates HTTPS.
+- The allowed hosts setting should be passed via an environment variable.  This allows production use easier.  I didn't take the time to do this as it was lower priority at this time.
+
+### Docker
+
+- Right now the docker file copies a lot of the local files into the container.  I was trying to use a .dockerignore to keep the container size small.  I need more time to evaluate a better way to handle this, perhaps only copying specific files instead of copying the whole directly and relying on .dockerignore.  Either way this would require more time.
+- Investigate if there's a better way to build the docker container, or update it, that doesn't take so long.  I suspect there is using a more modular dockerfile.  I have heard of using multi-stage docker files but have not myself used one before.  I decided doing that research would take too long.
+Setup container reg and push first version
+
+### CI
+
+- Setup GitHub actions
+-- Run tests
+-- Build container
+-- Push built container to reg
 
 ## How to run
 
+This command will start the initial version which sets up the database and seeds it.
 ```bash
-# the command(s) a reviewer should run
+docker compose --profile seed-database up
 ```
+
+Once you've seeded the database though you would not want your app to continue to reseed the database each run so just use this instead.
+```bash
+docker compose up
+```
+
 
 ## Deployment plan
 

@@ -31,7 +31,7 @@ def get_old_secret_key():
 SECRET_KEY_FALLBACKS = get_old_secret_key()
 
 # Since we don't know the actual URL just use localhost for now
-# If this was deployed for real we'd know the desired URL
+# TODO: Setup this as an environment variable instead
 ALLOWED_HOSTS = ["127.0.0.1","::1","localhost"]
 
 
@@ -80,8 +80,13 @@ WSGI_APPLICATION = "notesy.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST"),
+        "PORT": os.getenv("POSTGRES_PORT"),
+        "CONN_MAX_AGE": int(os.getenv("POSTGRES_CONN_MAX_AGE", "60")),
     }
 }
 
