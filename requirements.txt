@@ -1,7 +1,9 @@
-django
-gunicorn
-psycopg2-binary
-requests==2.20.0
-python-dotenv
-pytest
-pytest-django
+Django==5.2.15
+gunicorn==26.0.0
+psycopg2-binary==2.9.12
+# Was pinned to 2.20.0 (2018), which carries known CVEs. Bumped to current.
+requests==2.34.2
+python-dotenv==1.2.2
+pytest==9.1.1
+pytest-django==4.12.0
+dj-database-url==3.1.2          # added: parses DATABASE_URL in settings.py
