@@ -1,0 +1,12 @@
+.git
+.github/
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+!.env.example
+db.sqlite3
+.sessions/
+staticfiles/
+node_modules/
