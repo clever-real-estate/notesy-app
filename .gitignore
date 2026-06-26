@@ -5,3 +5,10 @@ db.sqlite3
 node_modules/
 .venv/
 venv/
+staticfiles/
+*.log
+docker-compose.override.yml
+Windows files
+esbuild
+notesy-frontend@0.1.0 
+static/

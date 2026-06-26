@@ -1,14 +1,116 @@
-name: CI
+name: CI/CD
 
-on: [push]
+on:
+  push:
+    branches:
+      - main           
+      - dev-challenge  
+  pull_request:
+    branches:
+      - main           
+
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+
+  
   test:
     runs-on: ubuntu-latest
+   
+    services:
+     
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: notesy_test
+          POSTGRES_USER: notesy
+          POSTGRES_PASSWORD: testpassword
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+        
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: pytest || true
+
+      
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      
+      - name: Install Node dependencies and build
+        run: npm ci && npm run build
+
+      
+      - name: Run migrations
+        env:
+          SECRET_KEY: ci-fake-secret-key-not-used-in-production
+          DEBUG: "True"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DATABASE_URL: postgres://notesy:testpassword@localhost:5432/notesy_test
+        run: python manage.py migrate
+
+      
+      - name: Run tests
+        env:
+          SECRET_KEY: ci-fake-secret-key-not-used-in-production
+          DEBUG: "True"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DATABASE_URL: postgres://notesy:testpassword@localhost:5432/notesy_test
+        run: pytest
+
+  
+  build-and-push:
+    needs: test
+  
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+   
+
+    permissions:
+      contents: read
+      packages: write
+      
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+   
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
