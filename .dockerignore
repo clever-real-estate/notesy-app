@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+node_modules
+static/js
+staticfiles
+db.sqlite3
+.sessions
+.env
+.env.*
+!.env.example
+.DS_Store
