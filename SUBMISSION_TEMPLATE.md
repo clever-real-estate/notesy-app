@@ -18,7 +18,7 @@
 
 ## Tradeoffs
 
--
+- 
 
 ## What I'd do with another day
 
