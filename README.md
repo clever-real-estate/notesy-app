@@ -14,12 +14,17 @@ If you find yourself going significantly past 3 hours, stop and write down what 
 
 ## How to submit
 
-1. Fork this repo.
-2. Do the work in your fork on a branch.
-3. Open a pull request **against your own fork's `main`** so we can see the diff cleanly.
-4. Reply to our email with the PR link.
+1. Do not fork this repository for your submission.
+2. Create a new private repository for your work. You may either create it from this repository as a template, or clone this repository locally and push the starter code to a new private repository.
+3. Invite `mikejaffe` and `rymccue` to the private repository.
+4. Do the work in your private repository.
+5. Add your `SUBMISSION.md` (see below).
+6. Open a pull request inside your private repository for reviewers to inspect.
+7. Email your recruiter point of contact with the private repository and pull request links.
 
-We will read the PR and run your stack locally (and in GitHub Actions on your fork) before the walkthrough.
+We will read the PR and run your stack locally (and in GitHub Actions on your repository) before the walkthrough.
+
+Questions? Reach out to your Clever recruiting contact.
 
 ---
 
