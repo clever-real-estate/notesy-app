@@ -1,15 +1,21 @@
 """Django settings for notesy."""
 import os
 from pathlib import Path
+from urllib.parse import urlparse
+from dotenv import load_dotenv
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# SECRET_KEY = "django-insecure-replace-me-eventually-l0lz-h4xx-9000"
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]  # Will crash if key is missing. Done intentionally
 
-SECRET_KEY = "django-insecure-replace-me-eventually-l0lz-h4xx-9000"
+# DEBUG = True # was hardcoded. replaced with the env variable
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
-DEBUG = True
+# ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
-ALLOWED_HOSTS = ["*"]
 
 
 INSTALLED_APPS = [
@@ -53,15 +59,20 @@ TEMPLATES = [
 WSGI_APPLICATION = "notesy.wsgi.application"
 
 
+_db = urlparse(os.environ["DATABASE_URL"])
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": _db.path.lstrip("/"),
+        "USER": _db.username,
+        "PASSWORD": _db.password,
+        "HOST": _db.hostname,
+        "PORT": _db.port,
     }
 }
 
-
-SESSION_ENGINE = "django.contrib.sessions.backends.file"
+SESSION_ENGINE = os.environ.get("SESSION_ENGINE", "django.contrib.sessions.backends.file")
 SESSION_FILE_PATH = str(BASE_DIR / ".sessions")
 os.makedirs(SESSION_FILE_PATH, exist_ok=True)
 
@@ -87,3 +98,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

@@ -17,19 +17,14 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
-            #print(f"login ok user={username}")
-            logger.info("login ok user=%s", username)
+            print(f"login ok user={username}")
             return redirect("note_list")
-            # print(f"login failed user={username}")
-        
-        logger.warning("login failed user=%s", username)
-
+        print(f"login failed user={username}")
         return render(request, "notes/login.html", {"error": "Invalid credentials"})
     return render(request, "notes/login.html")
 
 
 def logout_view(request):
-    
     logout(request)
     return redirect("login")
 
@@ -54,8 +49,7 @@ def note_create(request):
             title=request.POST.get("title", "Untitled"),
             body=request.POST.get("body", ""),
         )
-        #print(f"note created id={note.pk} owner={request.user.username}")
-        logger.info("note created id=%s owner=%s", note.pk, request.user.username)
+        print(f"note created id={note.pk} owner={request.user.username}")
         return render(request, "notes/_note_card.html", {"note": note})
     return render(request, "notes/_editor.html", {"note": None})
 
@@ -67,8 +61,7 @@ def note_edit(request, pk):
         note.title = request.POST.get("title", note.title)
         note.body = request.POST.get("body", note.body)
         note.save()
-        #print(f"note saved id={note.pk}")
-        logger.info("note saved id=%s", note.pk)
+        print(f"note saved id={note.pk}")
         return render(request, "notes/_note_card.html", {"note": note})
     return render(request, "notes/_editor.html", {"note": note})
 
@@ -77,9 +70,7 @@ def note_edit(request, pk):
 def note_delete(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
     note.delete()
-    #print(f"note deleted id={pk}")
-    logger.info("note deleted id=%s", pk)
-    
+    print(f"note deleted id={pk}")
     return HttpResponse(status=204)
 
 
@@ -94,7 +85,5 @@ def note_summarize(request, pk):
     time.sleep(8)
     note.summary = (note.body or "")[:140] + ("..." if len(note.body or "") > 140 else "")
     note.save(update_fields=["summary"])
-    #print(f"note summarized id={note.pk}")
-    logger.info("note summarized id=%s", note.pk)
-
+    print(f"note summarized id={note.pk}")
     return render(request, "notes/_note_card.html", {"note": note})
