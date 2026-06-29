@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_DB: notesy_test
           POSTGRES_USER: notesy
-          POSTGRES_PASSWORD: notesy_test_pw
+          POSTGRES_PASSWORD: notesy_dev_pw
         ports:
           - 5432:5432
         options: >-
@@ -32,7 +32,7 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
